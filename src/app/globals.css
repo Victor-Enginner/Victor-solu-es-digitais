@@ -1,26 +1,168 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* Force selector-based dark mode variant in Tailwind CSS v4 */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-brand-blue: #0052FF;
+  --color-brand-blue-hover: #1E6BFF;
+  --color-brand-dark: #0B132B;
+  --color-brand-green: #10B981;
+  
+  /* Dynamic Theme Colors mapped to CSS variables */
+  --color-brand-bg: var(--background);
+  --color-primary: var(--text-primary);
+  --color-secondary: var(--text-secondary);
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
+
+  --animate-pulse-glow: pulse-glow 3s infinite alternate;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@keyframes pulse-glow {
+  0% {
+    box-shadow: 0 0 10px rgba(0, 82, 255, 0.15);
   }
+  100% {
+    box-shadow: 0 0 25px rgba(0, 82, 255, 0.45);
+  }
+}
+
+/* Light Mode (Default) */
+:root {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --card-bg: rgba(255, 255, 255, 0.8);
+  --card-bg-hover: rgba(255, 255, 255, 0.95);
+  --card-border: rgba(0, 82, 255, 0.1);
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --shadow-color: rgba(0, 82, 255, 0.08);
+  --grid-color: rgba(0, 82, 255, 0.03);
+  --border-input: rgba(0, 0, 0, 0.1);
+  --bg-input: #ffffff;
+}
+
+/* Dark Mode (.dark class on html element) */
+.dark {
+  --background: #030712;
+  --foreground: #f9fafb;
+  --card-bg: rgba(11, 19, 43, 0.45);
+  --card-bg-hover: rgba(11, 19, 43, 0.65);
+  --card-border: rgba(255, 255, 255, 0.08);
+  --text-primary: #f9fafb;
+  --text-secondary: #9CA3AF;
+  --shadow-color: rgba(0, 82, 255, 0.3);
+  --grid-color: rgba(255, 255, 255, 0.02);
+  --border-input: rgba(255, 255, 255, 0.08);
+  --bg-input: #030712;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter), sans-serif;
+  overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-input);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #0052FF;
+}
+
+/* Premium glassmorphic utility classes */
+.glass-panel {
+  background: var(--card-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--card-border);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.glass-panel-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-panel-hover:hover {
+  background: var(--card-bg-hover);
+  border-color: rgba(0, 82, 255, 0.4);
+  box-shadow: 0 10px 30px -10px var(--shadow-color);
+  transform: translateY(-2px);
+}
+
+/* Gradient Text */
+.text-gradient-blue {
+  background: linear-gradient(135deg, var(--text-primary) 30%, #0052FF 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-gradient-green {
+  background: linear-gradient(135deg, var(--text-primary) 30%, #10B981 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Cyber grid background */
+.cyber-grid {
+  background-size: 40px 40px;
+  background-image: 
+    linear-gradient(to right, var(--grid-color) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-color) 1px, transparent 1px);
+}
+
+/* Print styles for A4 PDF download */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    font-size: 11pt;
+    line-height: 1.4;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  
+  header, footer, button, .no-print, nav {
+    display: none !important;
+  }
+  
+  .glass-panel {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    page-break-inside: avoid;
+    transform: none !important;
+  }
+  
+  .cyber-grid {
+    background-image: none !important;
+  }
+  
+  .text-gradient-blue, .text-gradient-green {
+    background: none !important;
+    -webkit-text-fill-color: initial !important;
+    color: #0052FF !important;
+    font-weight: 800 !important;
+  }
+
+  /* Force print page sizes */
+  @page {
+    size: A4;
+    margin: 1.5cm;
+  }
+}
+
