@@ -154,22 +154,18 @@ export function ProspectSimulator() {
               </span>
             </div>
 
-            {/* Simulated Map Board (Remains dark for tech/radar styling) */}
-            <div className="relative flex-1 min-h-[350px] sm:min-h-[420px] rounded-2xl border border-brand-blue/15 overflow-hidden bg-[#070b19] cyber-grid shadow-2xl">
+            {/* Simulated Map Board (Satellite View) */}
+            <div className="relative flex-1 min-h-[350px] sm:min-h-[420px] rounded-2xl border border-brand-blue/15 overflow-hidden bg-brand-bg shadow-2xl">
               
-              {/* Street vectors (visual background) */}
-              <div className="absolute inset-0 opacity-15 pointer-events-none">
-                {/* Horizontal Streets */}
-                <div className="absolute top-[20%] left-0 right-0 h-[10px] bg-[#1E293B]" />
-                <div className="absolute top-[50%] left-0 right-0 h-[15px] bg-[#1E293B]" />
-                <div className="absolute top-[75%] left-0 right-0 h-[10px] bg-[#1E293B]" />
-                {/* Vertical Streets */}
-                <div className="absolute left-[30%] top-0 bottom-0 w-[12px] bg-[#1E293B]" />
-                <div className="absolute left-[60%] top-0 bottom-0 w-[15px] bg-[#1E293B]" />
-                {/* Diagonal Streets */}
-                <div className="absolute top-0 left-0 w-[20px] h-[150%] bg-[#1E293B] rotate-45 transform origin-top-left" />
-                <div className="absolute bottom-0 right-0 w-[15px] h-[150%] bg-[#1E293B] -rotate-45 transform origin-bottom-right" />
-              </div>
+              {/* Satellite Background */}
+              <img 
+                src="/images/satellite_map_franca.png" 
+                alt="Mapa de Satélite de Franca SP" 
+                className="absolute inset-0 w-full h-full object-cover opacity-85 dark:opacity-75 saturate-[1.1] brightness-[0.9] dark:brightness-[0.7]"
+              />
+
+              {/* Overlay vignette for contrast */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-black/25 pointer-events-none" />
 
               {/* Central Marker representing Victor AI agency headquarters */}
               <div className="absolute top-[48%] left-[48%] -translate-x-1/2 -translate-y-1/2 z-20">
