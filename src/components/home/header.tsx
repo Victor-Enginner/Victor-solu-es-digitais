@@ -93,7 +93,7 @@ export function Header() {
               onClick={() => scrollToSection("prospeccao")}
               className="text-sm font-medium text-secondary hover:text-primary transition-colors cursor-pointer"
             >
-              Indicar Empresa
+              Quero Trabalhar
             </button>
           </nav>
 
@@ -186,7 +186,7 @@ export function Header() {
             onClick={() => scrollToSection("prospeccao")}
             className="text-left text-base font-medium text-secondary hover:text-primary py-1 cursor-pointer"
           >
-            Indicar Empresa
+            Quero Trabalhar
           </button>
           
           {user ? (
