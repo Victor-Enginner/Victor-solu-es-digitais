@@ -16,13 +16,45 @@ interface PartnerUser {
 interface AuthContextType {
   user: PartnerUser | null;
   loading: boolean;
-  login: (email: string) => Promise<PartnerUser>;
-  signup: (name: string, email: string, whatsapp: string, pixKey: string) => Promise<PartnerUser>;
+  login: (email: string, password?: string) => Promise<PartnerUser>;
+  /** Retorna null quando o Supabase exige confirmar o e-mail antes de entrar. */
+  signup: (
+    name: string,
+    email: string,
+    whatsapp: string,
+    pixKey: string,
+    password?: string
+  ) => Promise<PartnerUser | null>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// A tabela usa snake_case (pix_key); o app usa camelCase (pixKey).
+// Sem esse mapeamento o painel mostrava a chave Pix como "undefined" no modo real.
+function toPartnerUser(row: any): PartnerUser {
+  return {
+    id: row.id,
+    name: row.name,
+    email: row.email,
+    whatsapp: row.whatsapp,
+    pixKey: row.pix_key ?? row.pixKey ?? "",
+    level: row.level ?? 1,
+    created_at: row.created_at,
+  };
+}
+
+async function fetchPartnerProfile(userId: string): Promise<PartnerUser | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase
+    .from("partners")
+    .select("*")
+    .eq("id", userId)
+    .single();
+  if (error || !data) return null;
+  return toPartnerUser(data);
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<PartnerUser | null>(null);
@@ -30,22 +62,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Sync user session on mount
   useEffect(() => {
+    let unsubscribe: (() => void) | undefined;
+
     async function initAuth() {
       try {
         if (isRealDatabase && supabase) {
           const { data: { session } } = await supabase.auth.getSession();
           if (session?.user) {
-            // Fetch partner profile from PostgreSQL
-            const { data: profile } = await supabase
-              .from("partners")
-              .select("*")
-              .eq("id", session.user.id)
-              .single();
-
-            if (profile) {
-              setUser(profile as PartnerUser);
-            }
+            setUser(await fetchPartnerProfile(session.user.id));
           }
+
+          // Mantém o estado em sincronia (logout em outra aba, token expirado, confirmação de e-mail)
+          const { data: sub } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
+            if (!newSession?.user) {
+              setUser(null);
+              return;
+            }
+            // Não chamar o supabase direto aqui dentro (deadlock conhecido): adia para o próximo tick.
+            setTimeout(async () => {
+              setUser(await fetchPartnerProfile(newSession.user.id));
+            }, 0);
+          });
+          unsubscribe = () => sub.subscription.unsubscribe();
         } else {
           // Mock Session
           const mockUser = await mockDb.getCurrentUser();
@@ -61,28 +99,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     initAuth();
+    return () => unsubscribe?.();
   }, []);
 
-  const login = async (email: string): Promise<PartnerUser> => {
+  const login = async (email: string, password?: string): Promise<PartnerUser> => {
     setLoading(true);
     try {
       if (isRealDatabase && supabase) {
-        // Supabase Auth sign in (Real database requires password, so we mock dynamic sign in or require password)
-        // For unified simple portal, we check if partner exists first
-        const { data: profile, error: profileErr } = await supabase
-          .from("partners")
-          .select("*")
-          .eq("email", email)
-          .single();
-
-        if (profileErr || !profile) {
-          throw new Error("E-mail não cadastrado. Por favor, crie uma conta primeiro.");
+        if (!password) {
+          throw new Error("Digite sua senha.");
         }
 
-        // Mock passwordless sign-in for MVP, or you can implement email login.
-        // For the hybrid layer, we set user directly.
-        setUser(profile as PartnerUser);
-        return profile as PartnerUser;
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) {
+          if (error.message.toLowerCase().includes("email not confirmed")) {
+            throw new Error("Confirme seu e-mail antes de entrar. Enviamos um link para a sua caixa de entrada.");
+          }
+          throw new Error("E-mail ou senha incorretos.");
+        }
+
+        const profile = data.user ? await fetchPartnerProfile(data.user.id) : null;
+        if (!profile) {
+          throw new Error("Não encontramos o seu perfil de parceiro. Fale com o suporte.");
+        }
+
+        setUser(profile);
+        return profile;
       } else {
         const mockUser = await mockDb.loginPartner(email);
         setUser(mockUser);
@@ -99,27 +141,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     name: string,
     email: string,
     whatsapp: string,
-    pixKey: string
-  ): Promise<PartnerUser> => {
+    pixKey: string,
+    password?: string
+  ): Promise<PartnerUser | null> => {
     setLoading(true);
     try {
       if (isRealDatabase && supabase) {
-        // Insert into Supabase database table
-        const { data: profile, error } = await supabase
-          .from("partners")
-          .insert([{ name, email, whatsapp, pix_key: pixKey }])
-          .select()
-          .single();
-
-        if (error) {
-          if (error.code === "23505") { // Unique violation
-            throw new Error("Este e-mail já está cadastrado.");
-          }
-          throw error;
+        if (!password || password.length < 8) {
+          throw new Error("A senha precisa ter pelo menos 8 caracteres.");
         }
 
-        setUser(profile as PartnerUser);
-        return profile as PartnerUser;
+        // O trigger handle_new_user() (schema.sql) cria a linha em "partners" a partir desses metadados.
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: { name, whatsapp, pix_key: pixKey },
+            emailRedirectTo: typeof window !== "undefined" ? `${window.location.origin}/login` : undefined,
+          },
+        });
+
+        if (error) {
+          if (error.message.toLowerCase().includes("already registered")) {
+            throw new Error("Este e-mail já está cadastrado.");
+          }
+          throw new Error(error.message);
+        }
+
+        // Com "Confirm email" ligado no Supabase não vem sessão: o parceiro precisa confirmar por e-mail.
+        if (!data.session || !data.user) {
+          return null;
+        }
+
+        const profile = await fetchPartnerProfile(data.user.id);
+        if (profile) setUser(profile);
+        return profile;
       } else {
         const mockUser = await mockDb.signupPartner({ name, email, whatsapp, pixKey });
         setUser(mockUser);
@@ -152,13 +208,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       if (user) {
         if (isRealDatabase && supabase) {
-          const { data: profile } = await supabase
-            .from("partners")
-            .select("*")
-            .eq("id", user.id)
-            .single();
+          const profile = await fetchPartnerProfile(user.id);
           if (profile) {
-            setUser(profile as PartnerUser);
+            setUser(profile);
           }
         } else {
           const mockUser = await mockDb.getCurrentUser();

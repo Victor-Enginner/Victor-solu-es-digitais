@@ -56,6 +56,11 @@ export default function RankingPage() {
           <Logo />
         </div>
 
+        {/* Aviso: ranking ainda é demonstrativo */}
+        <div className="text-center text-[11px] font-semibold text-yellow-700 dark:text-yellow-400 bg-yellow-500/10 border border-yellow-500/20 rounded-xl px-4 py-2.5">
+          Dados ilustrativos: nomes e valores abaixo são exemplos do painel, não resultados reais de parceiros.
+        </div>
+
         {/* Intro Header */}
         <div className="text-center max-w-2xl mx-auto space-y-3 py-6">
           <span className="text-xs font-bold uppercase tracking-widest text-[#0052FF] bg-[#0052FF]/10 px-3.5 py-1 rounded-full border border-brand-blue/15 flex items-center gap-1.5 w-max mx-auto">

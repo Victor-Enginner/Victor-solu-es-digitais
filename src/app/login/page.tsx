@@ -6,13 +6,15 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { useAuth } from "../../hooks/useAuth";
 import { Logo } from "../../components/ui/logo";
-import { ArrowLeft, Mail, LogIn, Sparkles } from "lucide-react";
+import { isRealDatabase } from "../../lib/db";
+import { ArrowLeft, Mail, LogIn, Sparkles, Lock } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
   const { login, user } = useAuth();
 
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
@@ -30,10 +32,14 @@ export default function LoginPage() {
       setErrorMsg("Por favor, digite seu e-mail.");
       return;
     }
+    if (isRealDatabase && !password) {
+      setErrorMsg("Por favor, digite sua senha.");
+      return;
+    }
 
     setLoading(true);
     try {
-      await login(email);
+      await login(email, password);
       router.push("/dashboard");
     } catch (err: any) {
       setErrorMsg(err.message || "Erro ao fazer login. Verifique as credenciais.");
@@ -75,7 +81,7 @@ export default function LoginPage() {
               Acesse o seu Painel
             </h1>
             <p className="text-xs text-secondary max-w-xs mx-auto">
-              Digite seu e-mail cadastrado para entrar no painel de acompanhamento de prospecção.
+              {isRealDatabase ? "Entre com seu e-mail e senha para acompanhar suas indicações." : "Digite seu e-mail cadastrado para entrar no painel de acompanhamento de prospecção."}
             </p>
           </div>
 
@@ -108,6 +114,30 @@ export default function LoginPage() {
               </div>
             </div>
 
+
+            {/* Senha (só com banco real) */}
+            {isRealDatabase && (
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-secondary uppercase tracking-wider block">
+                  Sua Senha
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-secondary">
+                    <Lock className="w-4 h-4" />
+                  </div>
+                  <input
+                    type="password"
+                    required
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full bg-[var(--bg-input)] border border-[var(--border-input)] rounded-xl pl-10 pr-4 py-3 text-sm text-primary focus:outline-none focus:border-[#0052FF] transition-all"
+                  />
+                </div>
+              </div>
+            )}
+
             {/* Submit Button */}
             <button
               type="submit"
@@ -137,11 +167,13 @@ export default function LoginPage() {
           </div>
         </motion.div>
 
-        {/* Quick Tip Badge */}
-        <div className="flex items-center justify-center gap-1.5 text-[10px] text-secondary text-center px-4">
-          <Sparkles className="w-3.5 h-3.5 text-yellow-500" />
-          <span>Experimente usar o e-mail mockado: <strong className="text-[#0052FF]">gabriel@email.com</strong></span>
-        </div>
+        {/* Dica de demonstração: só aparece em desenvolvimento, nunca em produção */}
+        {!isRealDatabase && process.env.NODE_ENV !== "production" && (
+          <div className="flex items-center justify-center gap-1.5 text-[10px] text-secondary text-center px-4">
+            <Sparkles className="w-3.5 h-3.5 text-yellow-500" />
+            <span>Experimente usar o e-mail mockado: <strong className="text-[#0052FF]">gabriel@email.com</strong></span>
+          </div>
+        )}
 
       </div>
     </main>

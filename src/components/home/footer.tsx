@@ -1,39 +1,8 @@
 import React from "react";
+import Link from "next/link";
 import { Logo } from "../ui/logo";
+import { CONTACT_EMAIL, CONTACT_WHATSAPP_DISPLAY, whatsappLink } from "../../lib/site-config";
 import { Mail, Phone, MapPin, MessageSquare } from "lucide-react";
-
-// Inline brand SVGs to replace removed Lucide brand icons
-const InstagramIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    {...props}
-  >
-    <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
-    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-    <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
-  </svg>
-);
-
-const LinkedinIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    {...props}
-  >
-    <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
-    <rect width="4" height="12" x="2" y="9" />
-    <circle cx="4" cy="4" r="2" />
-  </svg>
-);
 
 export function Footer() {
   return (
@@ -55,11 +24,11 @@ export function Footer() {
             <ul className="space-y-2 text-xs text-text-secondary">
               <li className="flex items-center gap-2">
                 <Mail className="w-4 h-4 text-[#0052FF]" />
-                <span>contato@victorai.com.br</span>
+                <a href={`mailto:${CONTACT_EMAIL}`} className="hover:text-text-primary transition-colors">{CONTACT_EMAIL}</a>
               </li>
               <li className="flex items-center gap-2">
                 <Phone className="w-4 h-4 text-[#0052FF]" />
-                <span>(16) 98214-1822</span>
+                <a href={whatsappLink()} target="_blank" rel="noopener noreferrer" className="hover:text-text-primary transition-colors">{CONTACT_WHATSAPP_DISPLAY}</a>
               </li>
               <li className="flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-[#0052FF]" />
@@ -72,13 +41,7 @@ export function Footer() {
           <div className="space-y-3">
             <h5 className="text-xs font-bold text-text-primary uppercase tracking-widest">Redes & Links</h5>
             <div className="flex items-center gap-3">
-              <a href="#" className="p-2 rounded-lg bg-brand-bg border border-brand-blue/10 text-text-secondary hover:text-[#0052FF] hover:border-[#0052FF] transition-all">
-                <InstagramIcon className="w-4 h-4" />
-              </a>
-              <a href="#" className="p-2 rounded-lg bg-brand-bg border border-brand-blue/10 text-text-secondary hover:text-[#0052FF] hover:border-[#0052FF] transition-all">
-                <LinkedinIcon className="w-4 h-4" />
-              </a>
-              <a href="https://wa.me/5516982141822" target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg bg-brand-bg border border-brand-blue/10 text-text-secondary hover:text-[#10B981] hover:border-[#10B981] transition-all">
+              <a href={whatsappLink()} target="_blank" rel="noopener noreferrer" aria-label="Chamar no WhatsApp" className="p-2 rounded-lg bg-brand-bg border border-brand-blue/10 text-text-secondary hover:text-[#10B981] hover:border-[#10B981] transition-all">
                 <MessageSquare className="w-4 h-4" />
               </a>
             </div>
@@ -95,9 +58,9 @@ export function Footer() {
             © {new Date().getFullYear()} Victor AI Engineer - Soluções Digitais. Todos os direitos reservados.
           </p>
           <div className="flex gap-4 text-[10px] text-text-secondary">
-            <a href="#" className="hover:text-text-primary transition-colors">Termos de Uso</a>
+            <Link href="/termos" className="hover:text-text-primary transition-colors">Termos de Uso</Link>
             <span>•</span>
-            <a href="#" className="hover:text-text-primary transition-colors">Políticas de Privacidade</a>
+            <Link href="/privacidade" className="hover:text-text-primary transition-colors">Política de Privacidade</Link>
           </div>
         </div>
       </div>

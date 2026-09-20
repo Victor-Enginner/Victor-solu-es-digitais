@@ -184,28 +184,28 @@ export function Hero() {
                       {/* Metric 1 */}
                       <div className="bg-[#0B132B]/60 p-2 rounded-lg flex flex-col justify-between border border-white/5">
                         <div>
-                          <span className="text-[8px] text-[#9CA3AF] uppercase font-bold tracking-wider">Resumo de Projetos</span>
-                          <h3 className="text-xl font-bold text-white mt-0.5">23</h3>
+                          <span className="text-[8px] text-[#9CA3AF] uppercase font-bold tracking-wider">Setup por Indicação</span>
+                          <h3 className="text-xl font-bold text-white mt-0.5">R$ 400+</h3>
                         </div>
                         <div className="flex items-center gap-1 text-[8px] text-[#10B981] font-semibold mt-1">
-                          <span>+28% este mês</span>
+                          <span>pago via Pix no fechamento</span>
                         </div>
                       </div>
 
                       {/* Metric 2 */}
                       <div className="bg-[#0B132B]/60 p-2 rounded-lg flex flex-col justify-between border border-white/5">
                         <div>
-                          <span className="text-[8px] text-[#9CA3AF] uppercase font-bold tracking-wider">Clientes Atendidos</span>
-                          <h3 className="text-xl font-bold text-[#0052FF] mt-0.5">18</h3>
+                          <span className="text-[8px] text-[#9CA3AF] uppercase font-bold tracking-wider">Recorrência Mensal</span>
+                          <h3 className="text-xl font-bold text-[#0052FF] mt-0.5">R$ 80+</h3>
                         </div>
                         <div className="flex items-center gap-1 text-[8px] text-[#10B981] font-semibold mt-1">
-                          <span>+35% este mês</span>
+                          <span>por cliente ativo, todo mês</span>
                         </div>
                       </div>
 
                       {/* Solutions list inside screen */}
                       <div className="col-span-2 bg-[#0B132B]/60 p-2 rounded-lg flex flex-col justify-center gap-1.5 border border-white/5 min-h-0 overflow-hidden">
-                        <span className="text-[8px] text-[#9CA3AF] uppercase font-bold tracking-wider mb-0.5 block">Nossos Serviços Vendidos</span>
+                        <span className="text-[8px] text-[#9CA3AF] uppercase font-bold tracking-wider mb-0.5 block">Serviços que Você Pode Indicar</span>
                         <div className="grid grid-cols-2 gap-1 text-[9px]">
                           <div className="flex items-center gap-1 bg-white/5 px-1.5 py-1 rounded">
                             <Laptop className="w-3 h-3 text-[#0052FF]" />

@@ -4,7 +4,9 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PlusCircle, Search, DollarSign, Clock, CheckCircle2, AlertCircle, FileText, Send, Sparkles } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
-import { getLeads, createLead } from "../../lib/db";
+import { getLeads, createLead, isRealDatabase } from "../../lib/db";
+import { notifyPublicLead } from "../../lib/notifications";
+import { whatsappLink } from "../../lib/site-config";
 
 interface Lead {
   id: string;
@@ -36,6 +38,7 @@ export function Prospeccao() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const [whatsappShareUrl, setWhatsappShareUrl] = useState("");
 
   // Sync logged-in partner details
   useEffect(() => {
@@ -53,41 +56,10 @@ export function Prospeccao() {
         const data = await getLeads(user.id);
         setLeads(data);
       } else {
+        // Visitante sem conta: mostra só o que ele mesmo enviou neste navegador (nada de dados de exemplo).
         const cachedLeads = localStorage.getItem("victor_ai_partner_leads");
-        if (cachedLeads) {
-          setLeads(JSON.parse(cachedLeads));
-        } else {
-          const initialLeads: Lead[] = [
-            {
-              id: "mock1",
-              companyName: "Hamburgueria Burger House",
-              city: "Franca - SP",
-              service: "Sites & Landing Pages",
-              whatsapp: "(16) 99887-6655",
-              instagram: "@burgerhouse_franca",
-              partnerName: "Gabriel Souza (Aluno Uni-FACEF)",
-              partnerWhatsapp: "(16) 99123-4567",
-              pixKey: "gabriel@email.com",
-              status: "closed_paid",
-              date: "08/07/2026"
-            },
-            {
-              id: "mock2",
-              companyName: "Clínica FisioLife",
-              city: "Franca - SP",
-              service: "Google Meu Negócio",
-              whatsapp: "(16) 99221-1122",
-              instagram: "@fisiolife_franca",
-              partnerName: "Gabriel Souza (Aluno Uni-FACEF)",
-              partnerWhatsapp: "(16) 99123-4567",
-              pixKey: "gabriel@email.com",
-              status: "reviewing",
-              date: "09/07/2026"
-            }
-          ];
-          setLeads(initialLeads);
-          localStorage.setItem("victor_ai_partner_leads", JSON.stringify(initialLeads));
-        }
+        const parsed: Lead[] = cachedLeads ? JSON.parse(cachedLeads) : [];
+        setLeads(parsed.filter((l) => !String(l.id).startsWith("mock")));
       }
     } catch (err) {
       console.error("Erro ao buscar leads no formulário:", err);
@@ -144,7 +116,33 @@ export function Prospeccao() {
         const currentLeadsList = cachedLeads ? JSON.parse(cachedLeads) : [];
         const updatedLeads = [newLead, ...currentLeadsList];
         localStorage.setItem("victor_ai_partner_leads", JSON.stringify(updatedLeads));
+
+        // Avisa o Victor pelo servidor (WhatsApp/e-mail); se falhar, o botão do WhatsApp abaixo cobre.
+        notifyPublicLead({
+          companyName,
+          city,
+          service: serviceLabelMap[service] || service,
+          whatsapp,
+          instagram: instagram || undefined,
+          partnerName,
+          partnerWhatsapp,
+          pixKey,
+        }).catch((err) => console.error("Falha ao avisar o Victor:", err));
       }
+
+      setWhatsappShareUrl(
+        whatsappLink(
+          `Olá Victor! Acabei de indicar uma empresa pelo site.
+
+` +
+          `Empresa: ${companyName}
+Cidade: ${city}
+Serviço: ${serviceLabelMap[service] || service}
+` +
+          `WhatsApp do dono: ${whatsapp}
+Indicado por: ${partnerName}`
+        )
+      );
 
       setCompanyName("");
       setWhatsapp("");
@@ -156,7 +154,7 @@ export function Prospeccao() {
 
       setTimeout(() => {
         setShowSuccessToast(false);
-      }, 4000);
+      }, 12000);
     } catch (err) {
       console.error("Erro ao registrar indicação:", err);
       setIsSubmitting(false);
@@ -211,6 +209,16 @@ export function Prospeccao() {
             <div>
               <h5 className="font-bold text-primary text-sm">Empresa Indicada com Sucesso!</h5>
               <p className="text-xs text-secondary">Nossa equipe analisará o lead e atualizará o painel.</p>
+              {whatsappShareUrl && (
+                <a
+                  href={whatsappShareUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block mt-2 text-xs font-bold text-[#10B981] hover:underline"
+                >
+                  Avisar o Victor agora no WhatsApp →
+                </a>
+              )}
             </div>
           </motion.div>
         )}
@@ -410,7 +418,7 @@ export function Prospeccao() {
                 <FileText className="w-4 h-4 text-[#0052FF]" /> Minhas Indicações Recentes
               </span>
               <span className="text-[10px] text-secondary">
-                Salvo localmente no navegador
+                {user && isRealDatabase ? "Sincronizado com a sua conta" : "Salvo localmente no navegador"}
               </span>
             </div>
 

@@ -6,7 +6,8 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { useAuth } from "../../hooks/useAuth";
 import { Logo } from "../../components/ui/logo";
-import { ArrowLeft, User, Mail, Phone, Key, Sparkles, Send } from "lucide-react";
+import { isRealDatabase } from "../../lib/db";
+import { ArrowLeft, User, Mail, Phone, Key, Sparkles, Send, Lock, MailCheck } from "lucide-react";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -16,6 +17,8 @@ export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [pixKey, setPixKey] = useState("");
+  const [password, setPassword] = useState("");
+  const [needsConfirm, setNeedsConfirm] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
@@ -35,10 +38,20 @@ export default function SignupPage() {
       return;
     }
 
+    if (isRealDatabase && password.length < 8) {
+      setErrorMsg("A senha precisa ter pelo menos 8 caracteres.");
+      return;
+    }
+
     setLoading(true);
     try {
-      await signup(name, email, whatsapp, pixKey);
-      router.push("/dashboard");
+      const created = await signup(name, email, whatsapp, pixKey, password);
+      if (created) {
+        router.push("/dashboard");
+      } else {
+        // Supabase pediu confirmação de e-mail
+        setNeedsConfirm(true);
+      }
     } catch (err: any) {
       setErrorMsg(err.message || "Ocorreu um erro ao criar a sua conta.");
     } finally {
@@ -83,111 +96,155 @@ export default function SignupPage() {
             </p>
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleSignup} className="space-y-4">
-            {/* Error Message */}
-            {errorMsg && (
-              <div className="bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 p-3 rounded-xl text-xs font-semibold">
-                {errorMsg}
+          {/* Form (ou aviso de confirmação de e-mail) */}
+          {needsConfirm ? (
+            <div className="text-center space-y-3 py-4">
+              <div className="flex justify-center">
+                <MailCheck className="w-10 h-10 text-[#10B981]" />
               </div>
-            )}
-
-            {/* Name */}
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold text-secondary uppercase tracking-wider block">
-                Nome Completo
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-secondary">
-                  <User className="w-4 h-4" />
-                </div>
-                <input
-                  type="text"
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Seu nome completo"
-                  className="w-full bg-[var(--bg-input)] border border-[var(--border-input)] rounded-xl pl-10 pr-4 py-3 text-sm text-primary focus:outline-none focus:border-[#0052FF] transition-all"
-                />
-              </div>
+              <h2 className="text-lg font-black font-display text-primary">Confirme seu e-mail</h2>
+              <p className="text-xs text-secondary leading-relaxed">
+                Enviamos um link para <strong className="text-primary">{email}</strong>. Clique nele para ativar
+                sua conta e depois faça login. Não chegou? Olhe a caixa de spam.
+              </p>
+              <Link
+                href="/login"
+                className="inline-block mt-2 px-5 py-2.5 rounded-xl bg-brand-blue text-white font-bold text-sm hover:bg-brand-blue-hover transition-all"
+              >
+                Ir para o Login
+              </Link>
             </div>
-
-            {/* Email */}
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold text-secondary uppercase tracking-wider block">
-                Endereço de E-mail
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-secondary">
-                  <Mail className="w-4 h-4" />
+          ) : (
+            <form onSubmit={handleSignup} className="space-y-4">
+              {/* Error Message */}
+              {errorMsg && (
+                <div className="bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 p-3 rounded-xl text-xs font-semibold">
+                  {errorMsg}
                 </div>
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="exemplo@email.com"
-                  className="w-full bg-[var(--bg-input)] border border-[var(--border-input)] rounded-xl pl-10 pr-4 py-3 text-sm text-primary focus:outline-none focus:border-[#0052FF] transition-all"
-                />
-              </div>
-            </div>
-
-            {/* WhatsApp */}
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold text-secondary uppercase tracking-wider block">
-                Seu WhatsApp / Telefone
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-secondary">
-                  <Phone className="w-4 h-4" />
-                </div>
-                <input
-                  type="text"
-                  required
-                  value={whatsapp}
-                  onChange={(e) => setWhatsapp(e.target.value)}
-                  placeholder="Ex: (16) 99123-4567"
-                  className="w-full bg-[var(--bg-input)] border border-[var(--border-input)] rounded-xl pl-10 pr-4 py-3 text-sm text-primary focus:outline-none focus:border-[#0052FF] transition-all"
-                />
-              </div>
-            </div>
-
-            {/* Pix Key */}
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold text-secondary uppercase tracking-wider block">
-                Sua Chave Pix (Para Receber Comissões)
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-secondary">
-                  <Key className="w-4 h-4" />
-                </div>
-                <input
-                  type="text"
-                  required
-                  value={pixKey}
-                  onChange={(e) => setPixKey(e.target.value)}
-                  placeholder="CPF, celular, e-mail ou aleatória"
-                  className="w-full bg-[var(--bg-input)] border border-[var(--border-input)] rounded-xl pl-10 pr-4 py-3 text-sm text-primary focus:outline-none focus:border-[#0052FF] transition-all"
-                />
-              </div>
-            </div>
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3.5 rounded-xl bg-brand-blue text-white font-bold text-sm hover:bg-brand-blue-hover transition-all flex items-center justify-center gap-2 cursor-pointer shadow-[0_0_20px_rgba(0,82,255,0.2)] disabled:opacity-50 mt-2"
-            >
-              {loading ? (
-                <span>Criando conta...</span>
-              ) : (
-                <>
-                  <Send className="w-4 h-4" />
-                  <span>Cadastrar e Entrar no Painel</span>
-                </>
               )}
-            </button>
-          </form>
+
+              {/* Name */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-secondary uppercase tracking-wider block">
+                  Nome Completo
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-secondary">
+                    <User className="w-4 h-4" />
+                  </div>
+                  <input
+                    type="text"
+                    required
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Seu nome completo"
+                    className="w-full bg-[var(--bg-input)] border border-[var(--border-input)] rounded-xl pl-10 pr-4 py-3 text-sm text-primary focus:outline-none focus:border-[#0052FF] transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* Email */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-secondary uppercase tracking-wider block">
+                  Endereço de E-mail
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-secondary">
+                    <Mail className="w-4 h-4" />
+                  </div>
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="exemplo@email.com"
+                    className="w-full bg-[var(--bg-input)] border border-[var(--border-input)] rounded-xl pl-10 pr-4 py-3 text-sm text-primary focus:outline-none focus:border-[#0052FF] transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* WhatsApp */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-secondary uppercase tracking-wider block">
+                  Seu WhatsApp / Telefone
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-secondary">
+                    <Phone className="w-4 h-4" />
+                  </div>
+                  <input
+                    type="text"
+                    required
+                    value={whatsapp}
+                    onChange={(e) => setWhatsapp(e.target.value)}
+                    placeholder="Ex: (16) 99123-4567"
+                    className="w-full bg-[var(--bg-input)] border border-[var(--border-input)] rounded-xl pl-10 pr-4 py-3 text-sm text-primary focus:outline-none focus:border-[#0052FF] transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* Pix Key */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-secondary uppercase tracking-wider block">
+                  Sua Chave Pix (Para Receber Comissões)
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-secondary">
+                    <Key className="w-4 h-4" />
+                  </div>
+                  <input
+                    type="text"
+                    required
+                    value={pixKey}
+                    onChange={(e) => setPixKey(e.target.value)}
+                    placeholder="CPF, celular, e-mail ou aleatória"
+                    className="w-full bg-[var(--bg-input)] border border-[var(--border-input)] rounded-xl pl-10 pr-4 py-3 text-sm text-primary focus:outline-none focus:border-[#0052FF] transition-all"
+                  />
+                </div>
+              </div>
+
+
+              {/* Senha (só com banco real) */}
+              {isRealDatabase && (
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-secondary uppercase tracking-wider block">
+                    Crie uma Senha (mín. 8 caracteres)
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-secondary">
+                      <Lock className="w-4 h-4" />
+                    </div>
+                    <input
+                      type="password"
+                      required
+                      minLength={8}
+                      autoComplete="new-password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full bg-[var(--bg-input)] border border-[var(--border-input)] rounded-xl pl-10 pr-4 py-3 text-sm text-primary focus:outline-none focus:border-[#0052FF] transition-all"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3.5 rounded-xl bg-brand-blue text-white font-bold text-sm hover:bg-brand-blue-hover transition-all flex items-center justify-center gap-2 cursor-pointer shadow-[0_0_20px_rgba(0,82,255,0.2)] disabled:opacity-50 mt-2"
+              >
+                {loading ? (
+                  <span>Criando conta...</span>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4" />
+                    <span>Cadastrar e Entrar no Painel</span>
+                  </>
+                )}
+              </button>
+            </form>
+          )}
 
           {/* Login Footer */}
           <div className="border-t border-brand-blue/10 pt-5 mt-6 text-center text-xs text-secondary">
