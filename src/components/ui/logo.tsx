@@ -10,10 +10,11 @@ export function Logo({ className = "h-8", showText = true }: LogoProps) {
     <div className={`flex items-center gap-3 select-none ${className}`}>
       {/* Stylized geometric V Logo matching Victor's branding */}
       <svg
-        className="w-8 h-8 flex-shrink-0"
+        className="logo-3d w-8 h-8 flex-shrink-0"
         viewBox="0 0 100 100"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
+        aria-hidden="true"
       >
         {/* Left Blue Accent Chevron */}
         <path

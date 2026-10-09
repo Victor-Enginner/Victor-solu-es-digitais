@@ -41,8 +41,8 @@ export default function LoginPage() {
     try {
       await login(email, password);
       router.push("/dashboard");
-    } catch (err: any) {
-      setErrorMsg(err.message || "Erro ao fazer login. Verifique as credenciais.");
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : "Erro ao fazer login. Verifique as credenciais.");
     } finally {
       setLoading(false);
     }
@@ -142,7 +142,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3.5 rounded-xl bg-brand-blue text-white font-bold text-sm hover:bg-brand-blue-hover transition-all flex items-center justify-center gap-2 cursor-pointer shadow-[0_0_20px_rgba(0,82,255,0.2)] disabled:opacity-50 mt-2"
+              className="btn btn-primary w-full py-3.5 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-2 cursor-pointer mt-2"
             >
               {loading ? (
                 <span>Acessando...</span>

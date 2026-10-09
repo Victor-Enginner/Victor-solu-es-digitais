@@ -1,10 +1,28 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useRef } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import { ArrowRight, MessageSquare, MapPin, Sparkles, Laptop, ShieldCheck, DollarSign, Bot, Globe } from "lucide-react";
 import { TextScramble } from "../ui/text-scramble";
 
 export function Hero() {
+  const tiltRef = useRef<HTMLDivElement>(null);
+  const prefersReducedMotion = useReducedMotion();
+
+  // Tilt 3D suave: rotação segue o cursor; sem JS, o CSS mantém uma leve perspectiva estática.
+  const handleTilt = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (prefersReducedMotion || !tiltRef.current) return;
+    const card = tiltRef.current;
+    const rect = card.getBoundingClientRect();
+    const px = (e.clientX - rect.left) / rect.width - 0.5;
+    const py = (e.clientY - rect.top) / rect.height - 0.5;
+    card.style.transform = `rotateY(${px * 10}deg) rotateX(${py * -8}deg)`;
+  };
+
+  const resetTilt = () => {
+    if (!tiltRef.current) return;
+    tiltRef.current.style.transform = "";
+  };
   const scrollToSimulator = () => {
     const element = document.getElementById("simulador");
     if (element) {
@@ -117,7 +135,7 @@ export function Hero() {
             >
               <button
                 onClick={scrollToSimulator}
-                className="relative group overflow-hidden px-8 py-4 rounded-xl bg-[#0052FF] text-white font-bold text-base hover:bg-[#1E6BFF] transition-all shadow-[0_0_30px_rgba(0,82,255,0.25)] hover:shadow-[0_0_35px_rgba(0,82,255,0.45)] cursor-pointer flex items-center justify-center gap-2"
+                className="btn btn-primary relative px-8 py-4 rounded-xl text-white font-bold text-base flex items-center justify-center gap-2 cursor-pointer group"
               >
                 <span>Simular Ganhos</span>
                 <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
@@ -127,7 +145,7 @@ export function Hero() {
                 href="https://wa.me/5516982141822?text=Ol%C3%A1%20Victor,%20gostaria%20de%20saber%20mais%20sobre%20como%20trabalhar%20prospectando%20empresas%20de%20casa!"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-8 py-4 rounded-xl bg-transparent border border-brand-blue/20 text-primary font-bold text-base hover:bg-brand-blue/5 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                className="btn btn-secondary px-8 py-4 rounded-xl text-primary font-bold text-base flex items-center justify-center gap-2 cursor-pointer"
               >
                 <MessageSquare className="w-5 h-5 text-[#10B981]" />
                 <span>Chamar no WhatsApp</span>
@@ -151,7 +169,7 @@ export function Hero() {
           </div>
 
           {/* Right Visual Column (Interactive Laptop & Dashboard) */}
-          <div className="lg:col-span-5 relative w-full flex justify-center">
+          <div className="lg:col-span-5 relative w-full flex justify-center tilt-scene">
             <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 30 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -162,7 +180,12 @@ export function Hero() {
               <div className="absolute inset-0 bg-[#0052FF]/20 rounded-full blur-[80px] opacity-40 dark:opacity-70 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
 
               {/* LAPTOP CONTAINER */}
-              <div className="relative z-10 w-full">
+              <div
+                ref={tiltRef}
+                onMouseMove={handleTilt}
+                onMouseLeave={resetTilt}
+                className="tilt-card relative z-10 w-full"
+              >
                 {/* Screen frame */}
                 <div className="border-[8px] border-[#1e293b] rounded-t-2xl bg-black overflow-hidden shadow-2xl aspect-[16/10] relative">
                   

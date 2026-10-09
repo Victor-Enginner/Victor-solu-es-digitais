@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Logo } from "../../components/ui/logo";
-import { ArrowLeft, Award, Trophy, Users, DollarSign, Calendar, TrendingUp } from "lucide-react";
+import { ArrowLeft, Trophy } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface RankEntry {
@@ -107,7 +107,7 @@ export default function RankingPage() {
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="glass-panel p-6 rounded-2xl flex flex-col items-center justify-between text-center relative order-2 md:order-1 h-[240px] md:h-[220px]"
+            className="glass-panel card-lift p-6 rounded-2xl flex flex-col items-center justify-between text-center relative order-2 md:order-1 h-[240px] md:h-[220px]"
           >
             <div className="absolute top-0 right-0 p-3">
               <span className="text-3xl font-black font-display text-slate-400 opacity-20">#2</span>
@@ -129,7 +129,7 @@ export default function RankingPage() {
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="glass-panel p-6 rounded-2xl flex flex-col items-center justify-between text-center relative border-yellow-500/30 bg-yellow-500/5 order-1 md:order-2 h-[260px] md:h-[250px] shadow-xl shadow-yellow-500/5"
+            className="glass-panel card-lift p-6 rounded-2xl flex flex-col items-center justify-between text-center relative border-yellow-500/30 bg-yellow-500/5 order-1 md:order-2 h-[260px] md:h-[250px] shadow-xl shadow-yellow-500/5"
           >
             <div className="absolute top-0 right-0 p-3">
               <Trophy className="w-7 h-7 text-yellow-500" />
@@ -151,7 +151,7 @@ export default function RankingPage() {
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="glass-panel p-6 rounded-2xl flex flex-col items-center justify-between text-center relative order-3 h-[220px] md:h-[200px]"
+            className="glass-panel card-lift p-6 rounded-2xl flex flex-col items-center justify-between text-center relative order-3 h-[220px] md:h-[200px]"
           >
             <div className="absolute top-0 right-0 p-3">
               <span className="text-3xl font-black font-display text-amber-700 opacity-20">#3</span>

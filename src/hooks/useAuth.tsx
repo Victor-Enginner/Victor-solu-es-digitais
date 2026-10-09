@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { mockDb, supabase, isRealDatabase } from "../lib/db";
+import type { PartnerRow } from "../lib/types";
 
 interface PartnerUser {
   id: string;
@@ -33,15 +34,15 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // A tabela usa snake_case (pix_key); o app usa camelCase (pixKey).
 // Sem esse mapeamento o painel mostrava a chave Pix como "undefined" no modo real.
-function toPartnerUser(row: any): PartnerUser {
+function toPartnerUser(row: PartnerRow): PartnerUser {
   return {
     id: row.id,
     name: row.name,
     email: row.email,
-    whatsapp: row.whatsapp,
+    whatsapp: row.whatsapp ?? row.whatsapp_number ?? "",
     pixKey: row.pix_key ?? row.pixKey ?? "",
     level: row.level ?? 1,
-    created_at: row.created_at,
+    created_at: row.created_at ?? "",
   };
 }
 
@@ -88,7 +89,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // Mock Session
           const mockUser = await mockDb.getCurrentUser();
           if (mockUser) {
-            setUser(mockUser);
+            setUser(toPartnerUser(mockUser));
           }
         }
       } catch (err) {
@@ -127,11 +128,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return profile;
       } else {
         const mockUser = await mockDb.loginPartner(email);
-        setUser(mockUser);
-        return mockUser;
+        const normalized = toPartnerUser(mockUser);
+        setUser(normalized);
+        return normalized;
       }
-    } catch (err: any) {
-      throw new Error(err.message || "Erro ao realizar login.");
+    } catch (err) {
+      throw new Error(err instanceof Error ? err.message : "Erro ao realizar login.");
     } finally {
       setLoading(false);
     }
@@ -178,11 +180,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return profile;
       } else {
         const mockUser = await mockDb.signupPartner({ name, email, whatsapp, pixKey });
-        setUser(mockUser);
-        return mockUser;
+        const normalized = toPartnerUser(mockUser);
+        setUser(normalized);
+        return normalized;
       }
-    } catch (err: any) {
-      throw new Error(err.message || "Erro ao cadastrar parceiro.");
+    } catch (err) {
+      throw new Error(err instanceof Error ? err.message : "Erro ao cadastrar parceiro.");
     } finally {
       setLoading(false);
     }
@@ -215,7 +218,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else {
           const mockUser = await mockDb.getCurrentUser();
           if (mockUser) {
-            setUser(mockUser);
+            setUser(toPartnerUser(mockUser));
           }
         }
       }

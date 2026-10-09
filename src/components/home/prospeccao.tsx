@@ -1,26 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PlusCircle, Search, DollarSign, Clock, CheckCircle2, AlertCircle, FileText, Send, Sparkles } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import { getLeads, createLead, isRealDatabase } from "../../lib/db";
 import { notifyPublicLead } from "../../lib/notifications";
 import { whatsappLink } from "../../lib/site-config";
-
-interface Lead {
-  id: string;
-  companyName: string;
-  city: string;
-  service: string;
-  whatsapp: string;
-  instagram?: string;
-  partnerName: string;
-  partnerWhatsapp: string;
-  pixKey: string;
-  status: "pending" | "reviewing" | "closed_paid" | "rejected";
-  date: string;
-}
+import type { Lead } from "../../lib/types";
 
 export function Prospeccao() {
   const { user } = useAuth();
@@ -40,17 +27,19 @@ export function Prospeccao() {
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [whatsappShareUrl, setWhatsappShareUrl] = useState("");
 
-  // Sync logged-in partner details
+  // Sync logged-in partner details (espelha o perfil no formulário quando a sessão chega)
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect */
     if (user) {
       setPartnerName(user.name);
       setPartnerWhatsapp(user.whatsapp);
       setPixKey(user.pixKey);
     }
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [user]);
 
   // Load leads from DB (or localStorage mock on mount)
-  const fetchLeads = async () => {
+  const fetchLeads = useCallback(async () => {
     try {
       if (user) {
         const data = await getLeads(user.id);
@@ -64,11 +53,14 @@ export function Prospeccao() {
     } catch (err) {
       console.error("Erro ao buscar leads no formulário:", err);
     }
-  };
+    // Dep intencional: user?.id evita re-criar/re-refetchar quando o objeto user muda de referência.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchLeads();
-  }, [user]);
+  }, [fetchLeads]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -100,6 +92,7 @@ export function Prospeccao() {
         // Fallback local storage mock for non-logged-in visitors
         const newLead: Lead = {
           id: `lead_${Date.now()}`,
+          partner_id: "visitante",
           companyName,
           city,
           service: serviceLabelMap[service] || service,
@@ -326,7 +319,7 @@ Indicado por: ${partnerName}`
                       value={instagram}
                       onChange={(e) => setInstagram(e.target.value)}
                       placeholder="Ex: @bellaitalia"
-                      className="w-full bg-[var(--bg-input)] border border-[var(--border-input)] rounded-xl px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-[#0052FF] transition-all"
+                      className="w-full bg-[var(--bg-input)] border border-[var(--border-input)] rounded-xl px-4 py-3 text-sm text-primary focus:outline-none focus:border-[#0052FF] transition-all"
                     />
                   </div>
                 </div>
@@ -402,7 +395,7 @@ Indicado por: ${partnerName}`
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full py-4 rounded-xl bg-[#0052FF] text-white font-bold text-sm hover:bg-[#1E6BFF] transition-all flex items-center justify-center gap-2 cursor-pointer shadow-[0_0_20px_rgba(0,82,255,0.2)] disabled:opacity-50"
+                  className="btn btn-primary w-full py-4 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <Send className="w-4 h-4" />
                   <span>{isSubmitting ? "Enviando indicação..." : "Enviar Indicação Comercial"}</span>
@@ -436,7 +429,7 @@ Indicado por: ${partnerName}`
                       key={lead.id}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="glass-panel p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 relative overflow-hidden"
+                      className="glass-panel card-lift p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 relative overflow-hidden"
                     >
                       <div className="space-y-2">
                         {/* Company Details */}

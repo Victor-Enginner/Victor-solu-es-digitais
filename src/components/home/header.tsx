@@ -10,17 +10,16 @@ export function Header() {
   const { user } = useAuth();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  // Tema inicial lido direto do <html> (o script anti-flash do layout já rodou antes da hidratação).
+  const [theme, setTheme] = useState<"light" | "dark">(() =>
+    typeof document !== "undefined" && document.documentElement.classList.contains("dark") ? "dark" : "light"
+  );
 
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
     };
     window.addEventListener("scroll", handleScroll);
-    
-    // Sync initial theme
-    const isDark = document.documentElement.classList.contains("dark");
-    setTheme(isDark ? "dark" : "light");
 
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
@@ -102,7 +101,7 @@ export function Header() {
             {/* Theme Toggle Button */}
             <button
               onClick={toggleTheme}
-              className="p-2.5 rounded-full border border-brand-blue/10 hover:border-brand-blue/30 text-secondary hover:text-primary transition-all cursor-pointer bg-brand-bg/50"
+              className="p-2.5 rounded-full border border-brand-blue/10 hover:border-brand-blue/30 text-secondary hover:text-primary transition-all cursor-pointer bg-brand-bg/50 focus-visible:outline-2 focus-visible:outline-[#0052FF] focus-visible:outline-offset-2"
               title={theme === "light" ? "Ativar Modo Escuro" : "Ativar Modo Claro"}
             >
               {theme === "light" ? <Moon className="w-4.5 h-4.5" /> : <Sun className="w-4.5 h-4.5 text-yellow-400" />}
@@ -115,7 +114,7 @@ export function Header() {
                 </span>
                 <Link
                   href="/dashboard"
-                  className="px-5 py-2.5 rounded-full bg-brand-blue text-white font-semibold text-sm hover:bg-brand-blue-hover transition-colors shadow-[0_0_20px_rgba(0,82,255,0.25)] flex items-center gap-1.5 cursor-pointer"
+                  className="btn btn-primary px-5 py-2.5 rounded-full text-white font-semibold text-sm flex items-center gap-1.5 cursor-pointer"
                 >
                   <User className="w-4 h-4" />
                   Meu Painel
@@ -132,7 +131,7 @@ export function Header() {
                 
                 <button
                   onClick={() => scrollToSection("simulador")}
-                  className="relative group overflow-hidden px-5 py-2.5 rounded-full bg-brand-blue text-white font-semibold text-sm hover:bg-brand-blue-hover transition-colors shadow-[0_0_20px_rgba(0,82,255,0.25)] hover:shadow-[0_0_25px_rgba(0,82,255,0.45)] cursor-pointer flex items-center gap-1.5"
+                  className="btn btn-primary relative px-5 py-2.5 rounded-full text-white font-semibold text-sm flex items-center gap-1.5"
                 >
                   Simular Ganhos
                   <ArrowUpRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
@@ -146,7 +145,7 @@ export function Header() {
             {/* Mobile Theme Toggle */}
             <button
               onClick={toggleTheme}
-              className="p-2 rounded-full border border-brand-blue/10 text-secondary hover:text-primary transition-all cursor-pointer"
+              className="p-2 rounded-full border border-brand-blue/10 text-secondary hover:text-primary transition-all cursor-pointer focus-visible:outline-2 focus-visible:outline-[#0052FF] focus-visible:outline-offset-2"
             >
               {theme === "light" ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5 text-yellow-400" />}
             </button>
@@ -209,7 +208,7 @@ export function Header() {
               </Link>
               <button
                 onClick={() => scrollToSection("simulador")}
-                className="w-full py-3 rounded-xl bg-brand-blue text-white font-semibold text-center text-sm shadow-[0_0_15px_rgba(0,82,255,0.2)] flex items-center justify-center gap-1.5 cursor-pointer"
+                className="btn btn-primary w-full py-3 rounded-xl text-white font-semibold text-sm flex items-center justify-center gap-1.5"
               >
                 Simular Ganhos
                 <ArrowUpRight className="w-4 h-4" />

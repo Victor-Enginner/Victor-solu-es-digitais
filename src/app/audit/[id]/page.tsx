@@ -6,9 +6,9 @@ import { getAllLeads } from "../../../lib/db";
 import { generateAuditReport, AuditReport } from "../../../lib/auditor";
 import { Logo } from "../../../components/ui/logo";
 import { 
-  ArrowLeft, Printer, ShieldAlert, Sparkles, 
-  MapPin, CheckCircle, XCircle, HelpCircle, 
-  MessageSquare, Star, Image, Globe, ShieldCheck 
+  ArrowLeft, Printer, ShieldAlert, 
+  MapPin, CheckCircle, XCircle, 
+  MessageSquare, Star, Image as ImageIcon, Globe, ShieldCheck 
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -254,7 +254,7 @@ export default function AuditReportPage() {
               {/* Point 3 */}
               <div className="flex items-center justify-between border-b border-brand-blue/5 pb-2.5">
                 <span className="flex items-center gap-1.5">
-                  <Image className="w-4 h-4 text-secondary" /> Fotos Otimizadas
+                  <ImageIcon className="w-4 h-4 text-secondary" /> Fotos Otimizadas
                 </span>
                 {report.mapsPhotosCount > 15 ? (
                   <span className="text-emerald-500 font-bold flex items-center gap-1"><CheckCircle className="w-3.5 h-3.5" /> Sim</span>

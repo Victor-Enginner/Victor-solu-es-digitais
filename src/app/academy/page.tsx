@@ -4,8 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { Logo } from "../../components/ui/logo";
 import { 
-  ArrowLeft, Search, Copy, Check, Sparkles, 
-  MessageSquare, HelpCircle, GraduationCap, Video, BookOpen 
+  ArrowLeft, Copy, Check, 
+  GraduationCap, Video, BookOpen 
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 

@@ -77,7 +77,7 @@ export function ComoFunciona() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-100px" }}
                 transition={{ duration: 0.5, delay: idx * 0.15 }}
-                className="glass-panel glass-panel-hover p-6 rounded-2xl flex flex-col justify-between relative z-10"
+                className="glass-panel card-lift p-6 rounded-2xl flex flex-col justify-between relative z-10"
               >
                 <div className="space-y-4">
                   {/* Icon & Step Number */}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "../../hooks/useAuth";
@@ -41,7 +41,7 @@ export default function DashboardPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
 
-  const fetchUserData = async () => {
+  const fetchUserData = useCallback(async () => {
     if (!user) return;
     setLoadingLeads(true);
     try {
@@ -57,15 +57,18 @@ export default function DashboardPage() {
     } finally {
       setLoadingLeads(false);
     }
-  };
+  }, [user, refreshUser]);
 
   useEffect(() => {
     if (!authLoading && !user) {
       router.push("/login");
     } else if (user) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       fetchUserData();
     }
-  }, [user, authLoading]);
+    // fetchUserData muda a cada user; buscar direto por user.id evita loop de re-fetch.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, authLoading]);
 
   if (authLoading || !user) {
     return (
@@ -148,8 +151,8 @@ export default function DashboardPage() {
       
       // Refresh
       await fetchUserData();
-    } catch (err: any) {
-      setFormError(err.message || "Erro ao registrar indicação.");
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : "Erro ao registrar indicação.");
     } finally {
       setIsSubmitting(false);
     }
@@ -255,7 +258,7 @@ export default function DashboardPage() {
             <div className="pt-6 sm:pt-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-4 relative z-10">
               <button
                 onClick={() => setShowFormModal(true)}
-                className="py-3 px-6 rounded-xl bg-brand-blue hover:bg-brand-blue-hover text-white font-bold text-xs transition-all shadow-[0_0_20px_rgba(0,82,255,0.2)] flex items-center justify-center gap-1.5 cursor-pointer"
+                className="btn btn-primary py-3 px-6 rounded-xl text-white font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <Plus className="w-4.5 h-4.5" />
                 <span>Indicar Nova Empresa</span>
@@ -263,7 +266,7 @@ export default function DashboardPage() {
               
               <button
                 onClick={fetchUserData}
-                className="py-3 px-6 rounded-xl bg-transparent border border-brand-blue/20 hover:bg-brand-blue/5 text-primary font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                className="btn btn-secondary py-3 px-6 rounded-xl text-primary font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <RefreshCw className={`w-4 h-4 ${loadingLeads ? "animate-spin" : ""}`} />
                 <span>Atualizar Painel</span>
@@ -318,7 +321,7 @@ export default function DashboardPage() {
         {/* Core Stats Metric Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           {/* Card 1: Total Leads */}
-          <div className="glass-panel p-5 rounded-2xl relative overflow-hidden">
+          <div className="glass-panel card-lift p-5 rounded-2xl relative overflow-hidden">
             <div className="absolute top-0 right-0 p-3 opacity-5 text-secondary">
               <FileText className="w-12 h-12" />
             </div>
@@ -330,7 +333,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Card 2: Closed Deals */}
-          <div className="glass-panel p-5 rounded-2xl relative overflow-hidden">
+          <div className="glass-panel card-lift p-5 rounded-2xl relative overflow-hidden">
             <div className="absolute top-0 right-0 p-3 opacity-5 text-emerald-500">
               <CheckCircle2 className="w-12 h-12" />
             </div>
@@ -342,7 +345,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Card 3: Realized Payout */}
-          <div className="glass-panel p-5 rounded-2xl relative overflow-hidden bg-emerald-500/5">
+          <div className="glass-panel card-lift p-5 rounded-2xl relative overflow-hidden bg-emerald-500/5">
             <div className="absolute top-0 right-0 p-3 opacity-5 text-[#10B981]">
               <DollarSign className="w-12 h-12" />
             </div>
@@ -354,7 +357,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Card 4: Potential Payout */}
-          <div className="glass-panel p-5 rounded-2xl relative overflow-hidden bg-brand-blue/5">
+          <div className="glass-panel card-lift p-5 rounded-2xl relative overflow-hidden bg-brand-blue/5">
             <div className="absolute top-0 right-0 p-3 opacity-5 text-[#0052FF]">
               <DollarSign className="w-12 h-12" />
             </div>
@@ -387,7 +390,7 @@ export default function DashboardPage() {
               </div>
             ) : leads.length === 0 ? (
               <div className="glass-panel rounded-2xl p-12 text-center text-secondary italic text-sm">
-                Nenhuma indicação cadastrada ainda. Clique em "Indicar Nova Empresa" para começar a ganhar!
+                Nenhuma indicação cadastrada ainda. Clique em &quot;Indicar Nova Empresa&quot; para começar a ganhar!
               </div>
             ) : (
               <div className="space-y-3.5">
@@ -399,7 +402,7 @@ export default function DashboardPage() {
                   return (
                     <div
                       key={lead.id}
-                      className="glass-panel p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 relative overflow-hidden hover:border-brand-blue/30 transition-all duration-300"
+                      className="glass-panel card-lift p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 relative overflow-hidden"
                     >
                       <div className="space-y-2">
                         {/* Company Details */}
@@ -479,21 +482,21 @@ export default function DashboardPage() {
               <ul className="space-y-3.5 text-xs text-secondary">
                 <li className="flex items-start gap-2">
                   <div className="w-1.5 h-1.5 rounded-full bg-[#0052FF] mt-1.5 flex-shrink-0" />
-                  <span>Procure por **pizzarias locais no Instagram**. A maioria não tem site próprio e gasta fortunas com taxas de apps de delivery.</span>
+                  <span>Procure por <strong>pizzarias locais no Instagram</strong>. A maioria não tem site próprio e gasta fortunas com taxas de apps de delivery.</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <div className="w-1.5 h-1.5 rounded-full bg-[#0052FF] mt-1.5 flex-shrink-0" />
-                  <span>Pesquise por **'mecanica em franca'** no Google Maps. A maioria das que aparecem na segunda página está implorando por otimização local SEO.</span>
+                  <span>Pesquise por <strong>&apos;mecanica em franca&apos;</strong> no Google Maps. A maioria das que aparecem na segunda página está implorando por otimização local SEO.</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <div className="w-1.5 h-1.5 rounded-full bg-[#0052FF] mt-1.5 flex-shrink-0" />
-                  <span>Envie uma mensagem no direct de **clínicas de estética**. Se demorarem mais de 10 minutos, ofereça a Automação de Agendamento.</span>
+                  <span>Envie uma mensagem no direct de <strong>clínicas de estética</strong>. Se demorarem mais de 10 minutos, ofereça a Automação de Agendamento.</span>
                 </li>
               </ul>
               
               <Link 
                 href="/academy"
-                className="w-full mt-2 py-3 px-4 rounded-xl border border-brand-blue/15 hover:border-brand-blue/30 text-xs font-bold text-primary hover:text-[#0052FF] transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                className="btn btn-secondary w-full mt-2 py-3 px-4 rounded-xl text-xs font-bold text-primary hover:text-[#0052FF] flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <span>Acessar Treinamento Completo</span>
                 <ArrowRight className="w-4 h-4" />
@@ -644,7 +647,7 @@ export default function DashboardPage() {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="flex-1 py-3.5 rounded-xl bg-brand-blue hover:bg-brand-blue-hover text-white font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md disabled:opacity-50"
+                    className="btn btn-primary flex-1 py-3.5 rounded-xl text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <Send className="w-4 h-4" />
                     <span>{isSubmitting ? "Enviando..." : "Salvar Indicação"}</span>

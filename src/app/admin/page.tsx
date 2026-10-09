@@ -1,39 +1,25 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "../../hooks/useAuth";
 import { getAllLeads, updateLeadStatus } from "../../lib/db";
+import type { Lead, LeadStatus } from "../../lib/types";
 import { Logo } from "../../components/ui/logo";
 import { 
-  LogOut, RefreshCw, CheckCircle2, Search, 
-  Clock, AlertCircle, DollarSign, FileText, 
-  ArrowRight, Shield, MessageSquare, ExternalLink, Users
+  LogOut, RefreshCw, Search, 
+  Shield, MessageSquare, ExternalLink, Users
 } from "lucide-react";
-import { motion } from "framer-motion";
 
-interface AdminLead {
-  id: string;
-  partner_id: string;
-  companyName: string;
-  city: string;
-  service: string;
-  whatsapp: string;
-  instagram?: string;
-  status: "pending" | "reviewing" | "closed_paid" | "rejected";
-  date: string;
-  partnerName: string;
-  partnerWhatsapp: string;
-  pixKey: string;
-}
+// A página usa o tipo compartilhado de lead já normalizado.
+type AdminLead = Lead;
 
 export default function AdminPage() {
   const router = useRouter();
   const { user, loading: authLoading, logout } = useAuth();
   
   const [leads, setLeads] = useState<AdminLead[]>([]);
-  const [filteredLeads, setFilteredLeads] = useState<AdminLead[]>([]);
   const [loadingLeads, setLoadingLeads] = useState(true);
   const [updatingLeadId, setUpdatingLeadId] = useState<string | null>(null);
 
@@ -43,18 +29,17 @@ export default function AdminPage() {
 
   const ADMIN_EMAIL = "vitorborsari11@gmail.com";
 
-  const fetchAllData = async () => {
+  const fetchAllData = useCallback(async () => {
     setLoadingLeads(true);
     try {
       const data = await getAllLeads();
       setLeads(data);
-      setFilteredLeads(data);
     } catch (err) {
       console.error("Erro ao carregar dados do admin:", err);
     } finally {
       setLoadingLeads(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     if (!authLoading) {
@@ -63,13 +48,14 @@ export default function AdminPage() {
       } else if (user.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
         router.push("/dashboard");
       } else {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         fetchAllData();
       }
     }
-  }, [user, authLoading]);
+  }, [user, authLoading, router, fetchAllData]);
 
-  // Apply filters whenever search, filter, or base leads change
-  useEffect(() => {
+  // Filtro derivado do estado — sem setState dentro de effect (evita render em cascata).
+  const filteredLeads = useMemo(() => {
     let result = leads;
 
     if (searchQuery) {
@@ -84,7 +70,7 @@ export default function AdminPage() {
       result = result.filter(l => l.status === statusFilter);
     }
 
-    setFilteredLeads(result);
+    return result;
   }, [searchQuery, statusFilter, leads]);
 
   if (authLoading || !user || user.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
@@ -107,14 +93,14 @@ export default function AdminPage() {
     return 400;
   };
 
-  const handleStatusChange = async (leadId: string, newStatus: any) => {
+  const handleStatusChange = async (leadId: string, newStatus: LeadStatus) => {
     setUpdatingLeadId(leadId);
     try {
       await updateLeadStatus(leadId, newStatus);
       // Reload leads to sync values
       const updatedData = await getAllLeads();
       setLeads(updatedData);
-    } catch (err) {
+    } catch {
       alert("Erro ao atualizar status do lead.");
     } finally {
       setUpdatingLeadId(null);
@@ -387,7 +373,7 @@ export default function AdminPage() {
                           ) : (
                             <select
                               value={lead.status}
-                              onChange={(e) => handleStatusChange(lead.id, e.target.value)}
+                              onChange={(e) => handleStatusChange(lead.id, e.target.value as LeadStatus)}
                               className={`px-3 py-1.5 rounded-full border text-xs font-bold focus:outline-none cursor-pointer ${getStatusBadgeClass(lead.status)}`}
                             >
                               <option value="pending" className="bg-brand-bg text-primary">Pendente</option>

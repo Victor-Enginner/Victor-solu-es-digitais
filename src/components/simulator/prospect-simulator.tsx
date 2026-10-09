@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { MapPin, ArrowRight, TrendingDown, DollarSign, Activity, Sparkles, Map } from "lucide-react";
 
@@ -157,11 +158,13 @@ export function ProspectSimulator() {
             {/* Simulated Map Board (Satellite View) */}
             <div className="relative flex-1 min-h-[350px] sm:min-h-[420px] rounded-2xl border border-brand-blue/15 overflow-hidden bg-brand-bg shadow-2xl">
               
-              {/* Satellite Background */}
-              <img 
-                src="/images/satellite_map_franca.png" 
-                alt="Mapa de Satélite de Franca SP" 
-                className="absolute inset-0 w-full h-full object-cover opacity-85 dark:opacity-75 saturate-[1.1] brightness-[0.9] dark:brightness-[0.7]"
+              {/* Satellite Background (decorativo: alt vazio) */}
+              <Image
+                src="/images/satellite_map_franca.png"
+                alt=""
+                fill
+                unoptimized
+                className="object-cover opacity-85 dark:opacity-75 saturate-[1.1] brightness-[0.9] dark:brightness-[0.7]"
               />
 
               {/* Overlay vignette for contrast */}
@@ -187,8 +190,9 @@ export function ProspectSimulator() {
                   <button
                     key={opt.id}
                     onClick={() => setSelectedId(opt.id)}
+                    aria-label={`${opt.name}: ${opt.opportunity}`}
                     style={{ top: opt.coordTop, left: opt.coordLeft }}
-                    className="absolute -translate-x-1/2 -translate-y-1/2 group/pin z-20 cursor-pointer focus:outline-none"
+                    className="absolute -translate-x-1/2 -translate-y-1/2 group/pin z-20 cursor-pointer rounded-full focus-visible:outline-2 focus-visible:outline-red-400 focus-visible:outline-offset-4"
                   >
                     <div className="relative flex items-center justify-center">
                       {/* Pulse Glow */}
@@ -300,7 +304,7 @@ export function ProspectSimulator() {
                   {/* Trigger referral button */}
                   <button
                     onClick={handleIndicate}
-                    className="w-full py-4 px-4 rounded-xl bg-gradient-to-r from-[#0052FF] to-blue-600 text-white font-bold text-sm hover:from-[#1E6BFF] hover:to-blue-500 transition-all flex items-center justify-center gap-2 group cursor-pointer shadow-lg shadow-blue-500/20"
+                    className="btn btn-primary w-full py-4 px-4 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-2 group cursor-pointer"
                   >
                     <Sparkles className="w-4 h-4 text-yellow-300 group-hover:scale-110 transition-transform" />
                     <span>Quero Indicar esta Empresa</span>

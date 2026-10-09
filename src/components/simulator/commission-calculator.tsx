@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
-import { DollarSign, ShieldAlert, Sparkles, TrendingUp, ArrowRight } from "lucide-react";
+import { DollarSign, ShieldAlert, TrendingUp, ArrowRight } from "lucide-react";
 
 export function CommissionCalculator() {
+  // Flag de mount: servidor e primeira renderização cliente renderizam igual;
+  // o effect liga o gráfico (recharts) só depois da hidratação, sem mismatch.
   const [mounted, setMounted] = useState(false);
 
   // Sliders values
@@ -14,6 +16,7 @@ export function CommissionCalculator() {
   const [chatbots, setChatbots] = useState(1);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 
@@ -89,7 +92,7 @@ export function CommissionCalculator() {
           <div className="lg:col-span-6 space-y-6 flex flex-col justify-between">
             
             {/* Sites / Landing Pages Slider */}
-            <div className="glass-panel p-5 rounded-2xl space-y-3">
+            <div className="glass-panel card-lift p-5 rounded-2xl space-y-3">
               <div className="flex justify-between items-center">
                 <div>
                   <h4 className="text-sm font-bold text-primary">Sites & Landing Pages</h4>
@@ -114,7 +117,7 @@ export function CommissionCalculator() {
             </div>
 
             {/* Automations Slider */}
-            <div className="glass-panel p-5 rounded-2xl space-y-3">
+            <div className="glass-panel card-lift p-5 rounded-2xl space-y-3">
               <div className="flex justify-between items-center">
                 <div>
                   <h4 className="text-sm font-bold text-primary">Automações de WhatsApp</h4>
@@ -139,7 +142,7 @@ export function CommissionCalculator() {
             </div>
 
             {/* Systems / Dashboards Slider */}
-            <div className="glass-panel p-5 rounded-2xl space-y-3">
+            <div className="glass-panel card-lift p-5 rounded-2xl space-y-3">
               <div className="flex justify-between items-center">
                 <div>
                   <h4 className="text-sm font-bold text-primary">Sistemas Web & Dashboards</h4>
@@ -164,7 +167,7 @@ export function CommissionCalculator() {
             </div>
 
             {/* AI Chatbots Slider */}
-            <div className="glass-panel p-5 rounded-2xl space-y-3">
+            <div className="glass-panel card-lift p-5 rounded-2xl space-y-3">
               <div className="flex justify-between items-center">
                 <div>
                   <h4 className="text-sm font-bold text-primary">Agentes de Inteligência Artificial</h4>
@@ -258,11 +261,10 @@ export function CommissionCalculator() {
               <div className="border-t border-brand-blue/15 pt-4 mt-2 flex items-center justify-between">
                 <span className="text-[10px] text-secondary flex items-center gap-1">
                   <ShieldAlert className="w-3.5 h-3.5 text-yellow-500" /> Simulação baseada em contratos ativos.
-                </span>
-                <button
-                  onClick={handleIndicateNow}
-                  className="text-xs font-bold text-primary hover:text-[#0052FF] transition-colors flex items-center gap-1.5 cursor-pointer"
-                >
+                </span>                  <button
+                    onClick={handleIndicateNow}
+                    className="text-xs font-bold text-primary hover:text-[#0052FF] transition-colors flex items-center gap-1.5 cursor-pointer focus-visible:outline-2 focus-visible:outline-[#0052FF] focus-visible:outline-offset-2 rounded"
+                  >
                   Indicar Agora <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>

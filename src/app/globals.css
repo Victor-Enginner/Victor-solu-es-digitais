@@ -123,6 +123,211 @@ body {
     linear-gradient(to bottom, var(--grid-color) 1px, transparent 1px);
 }
 
+/* ============================================================
+   BUTTON SYSTEM — sheen sweep, press physics, focus visível
+   ============================================================ */
+.btn {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  -webkit-tap-highlight-color: transparent;
+  transform: translateZ(0);
+  transition:
+    transform 0.2s cubic-bezier(0.34, 1.4, 0.44, 1),
+    box-shadow 0.3s ease,
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    filter 0.2s ease;
+}
+
+/* Brilho que atravessa o botão no hover */
+.btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(
+    105deg,
+    transparent 42%,
+    rgba(255, 255, 255, 0.22) 50%,
+    rgba(255, 255, 255, 0.05) 58%,
+    transparent 66%
+  );
+  transform: translateX(-130%) skewX(-12deg);
+  transition: transform 0.7s cubic-bezier(0.2, 0.6, 0.2, 1);
+  pointer-events: none;
+}
+
+.btn:hover::after {
+  transform: translateX(130%) skewX(-12deg);
+}
+
+.btn:focus-visible {
+  outline: 2px solid #0052FF;
+  outline-offset: 3px;
+  border-radius: inherit;
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background-image: linear-gradient(160deg, #1E6BFF 0%, #0052FF 55%, #0047D6 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 8px 24px -10px rgba(0, 82, 255, 0.65);
+}
+
+.btn-primary:hover {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    0 14px 34px -10px rgba(0, 82, 255, 0.8);
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  border: 1px solid var(--border-input);
+  background: var(--card-bg);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.btn-secondary:hover {
+  border-color: rgba(0, 82, 255, 0.45);
+  box-shadow: 0 10px 26px -14px var(--shadow-color);
+  transform: translateY(-1px);
+}
+
+/* Press físico por cima do hover */
+.btn:active:not(:disabled),
+.btn-primary:active:not(:disabled),
+.btn-secondary:active:not(:disabled) {
+  transform: translateY(1px) scale(0.98);
+  transition-duration: 0.08s;
+}
+
+/* ============================================================
+   CARD ELEVATION — profundidade + linha de luz na borda superior
+   ============================================================ */
+.card-lift {
+  position: relative;
+  transition:
+    transform 0.35s cubic-bezier(0.2, 0.7, 0.3, 1),
+    box-shadow 0.35s ease,
+    border-color 0.35s ease;
+}
+
+.card-lift::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 8%;
+  right: 8%;
+  height: 1px;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(0, 82, 255, 0.55) 35%,
+    rgba(59, 130, 246, 0.2) 80%,
+    transparent 100%
+  );
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  pointer-events: none;
+}
+
+.card-lift:hover {
+  transform: translateY(-3px);
+  border-color: rgba(0, 82, 255, 0.35);
+  box-shadow: 0 22px 44px -20px var(--shadow-color);
+}
+
+.card-lift:hover::before {
+  opacity: 1;
+}
+
+/* ============================================================
+   3D SUBTLE — perspectiva para tilt e profundidade em camadas
+   ============================================================ */
+.tilt-scene {
+  perspective: 1400px;
+}
+
+/* Pose 3D base: o JS do hero sobrepõe no mousemove e restaura ao sair. */
+.tilt-card {
+  transform-style: preserve-3d;
+  will-change: transform;
+  transform: rotateY(-7deg) rotateX(2deg);
+  transition: transform 0.4s cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+.tilt-layer {
+  transform: translateZ(46px);
+}
+
+/* Perspectiva leve estática que endireita no hover */
+.persp-sm {
+  perspective: 900px;
+}
+
+.persp-sm > .persp-item {
+  transform: rotateY(-7deg) rotateX(2deg);
+  transition: transform 0.5s cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+.persp-sm:hover > .persp-item {
+  transform: rotateY(0deg) rotateX(0deg);
+}
+
+/* Logo "V" com giro 3D no hover */
+.logo-3d {
+  transition: transform 0.5s cubic-bezier(0.2, 0.7, 0.3, 1);
+  transform-style: preserve-3d;
+}
+
+.logo-3d:hover {
+  transform: perspective(600px) rotateY(-16deg) rotateX(4deg);
+}
+
+/* ============================================================
+   REDUCED MOTION — nada de transform/anim para quem prefere calma
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  .btn,
+  .btn::after,
+  .card-lift,
+  .card-lift::before,
+  .tilt-card,
+  .persp-sm > .persp-item,
+  .logo-3d,
+  .glass-panel-hover {
+    transition: none !important;
+  }
+
+  .btn:hover,
+  .btn-primary:hover,
+  .btn-secondary:hover,
+  .btn:active:not(:disabled),
+  .btn-primary:active:not(:disabled),
+  .btn-secondary:active:not(:disabled),
+  .card-lift:hover,
+  .glass-panel-hover:hover,
+  .logo-3d:hover,
+  .persp-sm > .persp-item {
+    transform: none !important;
+  }
+
+  .animate-ping,
+  .animate-pulse,
+  .animate-pulse-glow,
+  .animate-bounce {
+    animation: none !important;
+  }
+}
+
 /* Print styles for A4 PDF download */
 @media print {
   body {
@@ -165,4 +370,3 @@ body {
     margin: 1.5cm;
   }
 }
-

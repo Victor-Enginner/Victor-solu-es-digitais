@@ -52,8 +52,8 @@ export default function SignupPage() {
         // Supabase pediu confirmação de e-mail
         setNeedsConfirm(true);
       }
-    } catch (err: any) {
-      setErrorMsg(err.message || "Ocorreu um erro ao criar a sua conta.");
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : "Ocorreu um erro ao criar a sua conta.");
     } finally {
       setLoading(false);
     }
@@ -232,7 +232,7 @@ export default function SignupPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3.5 rounded-xl bg-brand-blue text-white font-bold text-sm hover:bg-brand-blue-hover transition-all flex items-center justify-center gap-2 cursor-pointer shadow-[0_0_20px_rgba(0,82,255,0.2)] disabled:opacity-50 mt-2"
+                className="btn btn-primary w-full py-3.5 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-2 cursor-pointer mt-2"
               >
                 {loading ? (
                   <span>Criando conta...</span>

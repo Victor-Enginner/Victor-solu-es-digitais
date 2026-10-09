@@ -2,6 +2,14 @@ import { supabase, isRealDatabase } from "./supabase-client";
 import { logMockNotification, notifyLeadCreated, notifyStatusChanged } from "./notifications";
 import { buildNewLeadMessage, buildStatusMessage } from "./messages";
 import { CONTACT_WHATSAPP } from "./site-config";
+import {
+  type PartnerRow,
+  type LeadRow,
+  type Lead,
+  type LeadInput,
+  type LeadStatus,
+  SERVICE_LABELS,
+} from "./types";
 
 export { supabase, isRealDatabase };
 
@@ -21,32 +29,33 @@ class MockDatabaseEngine {
   }
 
   // Partners CRUD
-  async signupPartner(userData: { name: string; email: string; whatsapp: string; pixKey: string }): Promise<any> {
-    const partners = this.getStorageItem<any[]>("victor_ai_partners", []);
-    
+  async signupPartner(userData: { name: string; email: string; whatsapp: string; pixKey: string }): Promise<PartnerRow> {
+    const partners = this.getStorageItem<PartnerRow[]>("victor_ai_partners", []);
+
     // Check if email already exists
     if (partners.some(p => p.email.toLowerCase() === userData.email.toLowerCase())) {
       throw new Error("Este e-mail já está cadastrado.");
     }
 
-    const newPartner = {
+    const newPartner: PartnerRow = {
       id: `partner_${Date.now()}`,
       ...userData,
+      pixKey: userData.pixKey,
       level: 1,
       created_at: new Date().toISOString()
     };
 
     partners.push(newPartner);
     this.setStorageItem("victor_ai_partners", partners);
-    
+
     // Start session
     this.setStorageItem("victor_ai_session", newPartner);
     return newPartner;
   }
 
-  async loginPartner(email: string): Promise<any> {
-    const partners = this.getStorageItem<any[]>("victor_ai_partners", []);
-    
+  async loginPartner(email: string): Promise<PartnerRow> {
+    const partners = this.getStorageItem<PartnerRow[]>("victor_ai_partners", []);
+
     // Special Mock Admin user creation if not existing
     if (process.env.NODE_ENV !== "production" && email.toLowerCase() === "vitorborsari11@gmail.com") {
       let adminPartner = partners.find(p => p.email.toLowerCase() === email.toLowerCase());
@@ -68,7 +77,7 @@ class MockDatabaseEngine {
     }
 
     const partner = partners.find(p => p.email.toLowerCase() === email.toLowerCase());
-    
+
     if (!partner) {
       throw new Error("E-mail não cadastrado. Crie uma conta primeiro.");
     }
@@ -78,8 +87,8 @@ class MockDatabaseEngine {
     return partner;
   }
 
-  async getCurrentUser(): Promise<any | null> {
-    return this.getStorageItem<any | null>("victor_ai_session", null);
+  async getCurrentUser(): Promise<PartnerRow | null> {
+    return this.getStorageItem<PartnerRow | null>("victor_ai_session", null);
   }
 
   async logout(): Promise<void> {
@@ -88,31 +97,33 @@ class MockDatabaseEngine {
   }
 
   // Leads CRUD
-  async getLeads(partnerId: string): Promise<any[]> {
-    const allLeads = this.getStorageItem<any[]>("victor_ai_partner_leads", []);
+  async getLeads(partnerId: string): Promise<Lead[]> {
+    const allLeads = this.getStorageItem<LeadRow[]>("victor_ai_partner_leads", []);
     // Filter leads belonging to this partner
-    return allLeads.filter(l => l.partner_id === partnerId || l.partnerId === partnerId || l.id === "mock1" || l.id === "mock2");
+    return allLeads
+      .filter(l => l.partner_id === partnerId || l.id === "mock1" || l.id === "mock2")
+      .map(normalizeLead);
   }
 
-  async createLead(partnerId: string, leadData: { companyName: string; city: string; service: string; whatsapp: string; instagram?: string }): Promise<any> {
-    const allLeads = this.getStorageItem<any[]>("victor_ai_partner_leads", []);
-    const partners = this.getStorageItem<any[]>("victor_ai_partners", []);
+  async createLead(partnerId: string, leadData: LeadInput): Promise<Lead> {
+    const allLeads = this.getStorageItem<LeadRow[]>("victor_ai_partner_leads", []);
+    const partners = this.getStorageItem<PartnerRow[]>("victor_ai_partners", []);
     const currentPartner = partners.find(p => p.id === partnerId);
-    
-    const newLead = {
+
+    const newLead: LeadRow = {
       id: `lead_${Date.now()}`,
       partner_id: partnerId,
-      companyName: leadData.companyName,
+      company_name: leadData.companyName,
       city: leadData.city,
-      service: leadData.service,
+      service_type: serviceLabelToType(leadData.service),
       whatsapp: leadData.whatsapp,
       instagram: leadData.instagram || undefined,
       status: "pending",
       date: new Date().toLocaleDateString("pt-BR"),
       created_at: new Date().toISOString(),
-      partnerName: currentPartner ? currentPartner.name : "Parceiro Mock",
-      partnerWhatsapp: currentPartner ? currentPartner.whatsapp : "(16) 99123-4567",
-      pixKey: currentPartner ? currentPartner.pixKey : "payout@email.com"
+      partners: currentPartner
+        ? { name: currentPartner.name, whatsapp: currentPartner.whatsapp, pix_key: currentPartner.pixKey }
+        : undefined
     };
 
     allLeads.unshift(newLead);
@@ -121,63 +132,67 @@ class MockDatabaseEngine {
     logMockNotification(
       CONTACT_WHATSAPP,
       buildNewLeadMessage({
-        companyName: newLead.companyName,
+        companyName: newLead.company_name,
         city: newLead.city,
-        service: newLead.service,
+        service: SERVICE_LABELS[newLead.service_type as keyof typeof SERVICE_LABELS] ?? newLead.service_type,
         whatsapp: newLead.whatsapp,
-        instagram: newLead.instagram,
-        partnerName: newLead.partnerName,
-        partnerWhatsapp: newLead.partnerWhatsapp,
-        pixKey: newLead.pixKey
+        instagram: newLead.instagram || undefined,
+        partnerName: newLead.partners?.name ?? "Parceiro Mock",
+        partnerWhatsapp: newLead.partners?.whatsapp ?? "(16) 99123-4567",
+        pixKey: newLead.partners?.pix_key ?? "payout@email.com"
       })
     );
 
-    return newLead;
+    return normalizeLead(newLead);
   }
 
-  async getAllLeads(): Promise<any[]> {
-    const allLeads = this.getStorageItem<any[]>("victor_ai_partner_leads", []);
-    const partners = this.getStorageItem<any[]>("victor_ai_partners", []);
-    
+  async getAllLeads(): Promise<Lead[]> {
+    const allLeads = this.getStorageItem<LeadRow[]>("victor_ai_partner_leads", []);
+    const partners = this.getStorageItem<PartnerRow[]>("victor_ai_partners", []);
+
     // Join partner details
     return allLeads.map(l => {
       const partner = partners.find(p => p.id === l.partner_id);
-      return {
+      return normalizeLead({
         ...l,
-        partnerName: partner ? partner.name : (l.partnerName || "Gabriel Souza (Mock)"),
-        partnerWhatsapp: partner ? partner.whatsapp : (l.partnerWhatsapp || "(16) 99123-4567"),
-        pixKey: partner ? partner.pixKey : (l.pixKey || "gabriel@email.com")
-      };
+        partners: partner
+          ? { name: partner.name, whatsapp: partner.whatsapp, pix_key: partner.pixKey }
+          : l.partners
+      });
     });
   }
 
-  async updateLeadStatus(leadId: string, status: any): Promise<any> {
-    const allLeads = this.getStorageItem<any[]>("victor_ai_partner_leads", []);
-    const partners = this.getStorageItem<any[]>("victor_ai_partners", []);
+  async updateLeadStatus(leadId: string, status: LeadStatus): Promise<Lead> {
+    const allLeads = this.getStorageItem<LeadRow[]>("victor_ai_partner_leads", []);
+    const partners = this.getStorageItem<PartnerRow[]>("victor_ai_partners", []);
     const leadIndex = allLeads.findIndex(l => l.id === leadId);
-    
+
     if (leadIndex !== -1) {
       allLeads[leadIndex].status = status;
       this.setStorageItem("victor_ai_partner_leads", allLeads);
-      
+
       const lead = allLeads[leadIndex];
       const partner = partners.find(p => p.id === lead.partner_id);
-      
+
       logMockNotification(
-        partner ? partner.whatsapp : (lead.partnerWhatsapp || CONTACT_WHATSAPP),
-        buildStatusMessage(partner ? partner.name : (lead.partnerName || "Parceiro"), lead.companyName, status)
+        partner?.whatsapp ?? lead.partners?.whatsapp ?? CONTACT_WHATSAPP,
+        buildStatusMessage(
+          partner?.name ?? lead.partners?.name ?? "Parceiro",
+          lead.company_name,
+          status
+        )
       );
 
-      return lead;
+      return normalizeLead(lead);
     }
     throw new Error("Lead não encontrado");
   }
 
   // Update mock levels based on successful closed leads
-  async updatePartnerLevel(partnerId: string, leadsList: any[]): Promise<number> {
-    const partners = this.getStorageItem<any[]>("victor_ai_partners", []);
+  async updatePartnerLevel(partnerId: string, leadsList: Lead[]): Promise<number> {
+    const partners = this.getStorageItem<PartnerRow[]>("victor_ai_partners", []);
     const partnerIndex = partners.findIndex(p => p.id === partnerId);
-    
+
     if (partnerIndex === -1) return 1;
 
     // 1 closed lead = level 2, 3 closed leads = level 3, 5+ = level 4
@@ -191,7 +206,7 @@ class MockDatabaseEngine {
       partners[partnerIndex].level = newLevel;
       this.setStorageItem("victor_ai_partners", partners);
       // Update session as well
-      const session = this.getStorageItem<any>("victor_ai_session", null);
+      const session = this.getStorageItem<PartnerRow | null>("victor_ai_session", null);
       if (session && session.id === partnerId) {
         session.level = newLevel;
         this.setStorageItem("victor_ai_session", session);
@@ -205,48 +220,66 @@ class MockDatabaseEngine {
 export const mockDb = new MockDatabaseEngine();
 
 // ==========================================
+// HELPERS
+// ==========================================
+
+// Legado: o mock salvava o label completo em service_type. Aceitamos os dois formatos.
+function serviceLabelToType(label: string): string {
+  const found = Object.entries(SERVICE_LABELS).find(([, v]) => v === label);
+  return found ? found[0] : label;
+}
+
+function toServiceLabel(serviceType: string): string {
+  return SERVICE_LABELS[serviceType as keyof typeof SERVICE_LABELS] ?? serviceType;
+}
+
+function normalizeLead(l: LeadRow): Lead {
+  return {
+    id: l.id,
+    partner_id: l.partner_id,
+    companyName: l.company_name,
+    city: l.city,
+    service: toServiceLabel(l.service_type),
+    whatsapp: l.whatsapp,      instagram: l.instagram || undefined,
+    status: l.status,
+    date: l.date,
+    created_at: l.created_at,
+    partnerName: l.partners?.name || "Parceiro",
+    partnerWhatsapp: l.partners?.whatsapp || "N/A",
+    pixKey: l.partners?.pix_key || "N/A"
+  };
+}
+
+// ==========================================
 // UNIFIED API INTERFACES
 // ==========================================
-export async function getLeads(partnerId: string): Promise<any[]> {
+export async function getLeads(partnerId: string): Promise<Lead[]> {
   if (isRealDatabase && supabase) {
     const { data, error } = await supabase
       .from("leads")
       .select("*")
       .eq("partner_id", partnerId)
       .order("created_at", { ascending: false });
-      
+
     if (error) throw error;
-    
-    return (data || []).map(l => ({
-      id: l.id,
-      partner_id: l.partner_id,
-      companyName: l.company_name,
-      city: l.city,
-      service: l.service_type === 'site' ? 'Sites & Landing Pages' :
-               l.service_type === 'google' ? 'Google Meu Negócio' :
-               l.service_type === 'automacao' ? 'Automações de WhatsApp' : 'Agente de Inteligência Artificial',
-      whatsapp: l.whatsapp,
-      instagram: l.instagram,
-      status: l.status,
-      date: l.date,
-      created_at: l.created_at
-    }));
+
+    return (data || []).map(l => normalizeLead(l as LeadRow));
   } else {
     return mockDb.getLeads(partnerId);
   }
 }
 
-export async function createLead(partnerId: string, leadData: { companyName: string; city: string; service: string; whatsapp: string; instagram?: string }): Promise<any> {
+export async function createLead(partnerId: string, leadData: LeadInput): Promise<Lead> {
   if (isRealDatabase && supabase) {
     const serviceTypeMap: Record<string, string> = {
       "Sites & Landing Pages": "site",
       "Google Meu Negócio": "google",
       "Automações de WhatsApp": "automacao",
       "Agente de Inteligência Artificial": "chatbot",
-      "site": "site",
-      "google": "google",
-      "automacao": "automacao",
-      "chatbot": "chatbot"
+      site: "site",
+      google: "google",
+      automacao: "automacao",
+      chatbot: "chatbot"
     };
 
     const { data, error } = await supabase
@@ -271,44 +304,28 @@ export async function createLead(partnerId: string, leadData: { companyName: str
       notifyLeadCreated(data.id).catch(err => console.error("Falha ao notificar nova indicação:", err));
     }
 
-    return data;
+    return normalizeLead(data as LeadRow);
   } else {
     return mockDb.createLead(partnerId, leadData);
   }
 }
 
-export async function getAllLeads(): Promise<any[]> {
+export async function getAllLeads(): Promise<Lead[]> {
   if (isRealDatabase && supabase) {
     const { data, error } = await supabase
       .from("leads")
       .select("*, partners(name, whatsapp, pix_key)")
       .order("created_at", { ascending: false });
-      
+
     if (error) throw error;
-    
-    return (data || []).map(l => ({
-      id: l.id,
-      partner_id: l.partner_id,
-      companyName: l.company_name,
-      city: l.city,
-      service: l.service_type === 'site' ? 'Sites & Landing Pages' :
-               l.service_type === 'google' ? 'Google Meu Negócio' :
-               l.service_type === 'automacao' ? 'Automações de WhatsApp' : 'Agente de Inteligência Artificial',
-      whatsapp: l.whatsapp,
-      instagram: l.instagram,
-      status: l.status,
-      date: l.date,
-      created_at: l.created_at,
-      partnerName: l.partners?.name || "Desconhecido",
-      partnerWhatsapp: l.partners?.whatsapp || "N/A",
-      pixKey: l.partners?.pix_key || "N/A"
-    }));
+
+    return (data || []).map(l => normalizeLead(l as LeadRow));
   } else {
     return mockDb.getAllLeads();
   }
 }
 
-export async function updateLeadStatus(leadId: string, status: "pending" | "reviewing" | "closed_paid" | "rejected"): Promise<any> {
+export async function updateLeadStatus(leadId: string, status: LeadStatus): Promise<Lead> {
   if (isRealDatabase && supabase) {
     const { data, error } = await supabase
       .from("leads")
@@ -321,13 +338,13 @@ export async function updateLeadStatus(leadId: string, status: "pending" | "revi
 
     notifyStatusChanged(leadId).catch(err => console.error("Falha ao notificar mudança de status:", err));
 
-    return data;
+    return normalizeLead(data as LeadRow);
   } else {
     return mockDb.updateLeadStatus(leadId, status);
   }
 }
 
-export async function updatePartnerLevel(partnerId: string, leadsList: any[]): Promise<number> {
+export async function updatePartnerLevel(partnerId: string, leadsList: Lead[]): Promise<number> {
   if (isRealDatabase && supabase) {
     // O nível é calculado no banco (trigger recalc_partner_level em schema.sql); o cliente só lê.
     const { data, error } = await supabase
